@@ -59,10 +59,13 @@ public final class Mapper<N: Mappable> {
 	
 	/// Maps a JSON dictionary to an existing object that conforms to Mappable.
 	/// Usefull for those pesky objects that have crappy designated initializers like NSManagedObject
-	public func map(JSONDictionary: [String : AnyObject], var toObject object: N) -> N {
+	public func map(JSONDictionary: [String : AnyObject], toObject object: N) -> N {
+        
+        var output = object
+        
 		let map = Map(mappingType: .FromJSON, JSONDictionary: JSONDictionary, toObject: true)
-		object.mapping(map)
-		return object
+		output.mapping(map)
+		return output
 	}
 
 	//MARK: Mapping functions that create an object
@@ -198,16 +201,19 @@ public final class Mapper<N: Mappable> {
 	}
 	
     /// Maps a JSON dictionary of dictionaries to an existing dictionary of Mappble objects
-    public func mapDictionary(JSONDictionary: [String : [String : AnyObject]], var toDictionary dictionary: [String : N]) -> [String : N] {
+    public func mapDictionary(JSONDictionary: [String : [String : AnyObject]], toDictionary dictionary: [String : N]) -> [String : N] {
+        
+        var output = dictionary
+        
         for (key, value) in JSONDictionary {
             if let object = dictionary[key] {
                 Mapper().map(value, toObject: object)
             } else {
-                dictionary[key] = Mapper().map(value)
+                output[key] = Mapper().map(value)
             }
         }
         
-        return dictionary
+        return output
     }
 	
 	/// Maps a JSON object to a dictionary of arrays of Mappable objects
@@ -291,9 +297,12 @@ extension Mapper {
 	// MARK: Functions that create JSON from objects	
 	
 	///Maps an object that conforms to Mappable to a JSON dictionary <String : AnyObject>
-	public func toJSON(var object: N) -> [String : AnyObject] {
+	public func toJSON(object: N) -> [String : AnyObject] {
+        
+        var output = object
+        
 		let map = Map(mappingType: .ToJSON, JSONDictionary: [:])
-		object.mapping(map)
+		output.mapping(map)
 		return map.JSONDictionary
 	}
 	
