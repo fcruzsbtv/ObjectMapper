@@ -35,13 +35,18 @@ private func setValue(_ value: Any, map: Map) {
 private func setValue(_ value: Any, key: String, checkForNestedKeys: Bool, delimiter: String, dictionary: inout [String : Any]) {
 	if checkForNestedKeys {
 
-
-
+        #if swift(>=4.0)
 		let keyComponents = ArraySlice(
             key.components(separatedBy: delimiter)
                 .filter { !$0.isEmpty }
-                .map { $0.characters }
             )
+        #else
+        let keyComponents = ArraySlice(
+            key.components(separatedBy: delimiter)
+                .filter { !$0.isEmpty }
+                .map({ $0.characters })
+        )
+        #endif
 
 		setValue(value, forKeyPathComponents: keyComponents, dictionary: &dictionary)
 	} else {
@@ -49,27 +54,52 @@ private func setValue(_ value: Any, key: String, checkForNestedKeys: Bool, delim
 	}
 }
 
+#if swift(>=4.0)
 private func setValue(_ value: Any, forKeyPathComponents components: ArraySlice<String>, dictionary: inout [String : Any]) {
-	if components.isEmpty {
-		return
-	}
+    if components.isEmpty {
+        return
+    }
 
-	let head = components.first!
+    let head = components.first!
 
-	if components.count == 1 {
-		dictionary[String(head)] = value
-	} else {
-		var child = dictionary[String(head)] as? [String : Any]
-		if child == nil {
-			child = [:]
-		}
+    if components.count == 1 {
+        dictionary[String(head)] = value
+    } else {
+        var child = dictionary[String(head)] as? [String : Any]
+        if child == nil {
+            child = [:]
+        }
 
-		let tail = components.dropFirst()
-		setValue(value, forKeyPathComponents: tail, dictionary: &child!)
+        let tail = components.dropFirst()
+        setValue(value, forKeyPathComponents: tail, dictionary: &child!)
 
-		dictionary[String(head)] = child
-	}
+        dictionary[String(head)] = child
+    }
 }
+#else
+private func setValue(_ value: Any, forKeyPathComponents components: ArraySlice<String.CharacterView.SubSequence>, dictionary: inout [String : Any]) {
+    if components.isEmpty {
+        return
+    }
+
+    let head = components.first!
+
+    if components.count == 1 {
+        dictionary[String(head)] = value
+    } else {
+        var child = dictionary[String(head)] as? [String : Any]
+        if child == nil {
+            child = [:]
+        }
+
+        let tail = components.dropFirst()
+        setValue(value, forKeyPathComponents: tail, dictionary: &child!)
+
+        dictionary[String(head)] = child
+    }
+}
+#endif
+
 
 internal final class ToJSON {
 	
